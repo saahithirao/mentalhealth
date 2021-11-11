@@ -1,0 +1,169 @@
+---
+title: "Final Project"
+output: word_document
+---
+
+```{r}
+library(tidyverse)
+library(factoextra)
+library(caTools)
+library(tree)
+library(randomForest)
+library(e1071)
+```
+
+```{r}
+load("C:/Users/raos2/OneDrive/Documents/GRADSCHOOL/707/mhcld_puf_2019_r.RData")
+```
+
+```{r}
+df[df == -9] <- NA
+sapply(df, function(x) sum(is.na(x)))
+
+# select variables and remove nas
+df1 <- df %>% 
+  select(AGE,DEPRESSFLG,ANXIETYFLG,RACE,GENDER,EDUC,EMPLOY,
+         LIVARAG) %>% 
+  na.omit()
+
+# recode age
+df2 = df1 %>% mutate(recoded_age = ifelse(AGE == 1, 5.5,
+                              ifelse(AGE == 2, 13, 
+                                ifelse(AGE == 3, 16, 
+                                  ifelse(AGE==4, 19,
+                                    ifelse(AGE==5, 23, 
+                                      ifelse(AGE==6, 27,
+                                        ifelse(AGE==7, 32, 
+                                          ifelse(AGE==8, 37,
+                                            ifelse(AGE==9, 42, 
+                                              ifelse(AGE==10,47, 
+                                                ifelse(AGE==11, 53, 
+                                                  ifelse(AGE==12, 57, 
+                                                    ifelse(AGE==13, 62, 
+                                                      ifelse(AGE==14, 72, NA))))))))))))))) %>% select(-c(AGE))
+
+# write.csv(df2, file = "project_data.csv")
+```
+
+# data for decision tree and table
+```{r}
+df3 <-df2 %>% mutate(depress = as.factor(DEPRESSFLG)) %>%
+  mutate(race = as.factor(RACE)) %>%
+  mutate(gender = as.factor(GENDER)) %>%
+  mutate(education = as.factor(EDUC)) %>% 
+  mutate(employment = as.factor(EMPLOY)) %>%
+  mutate(living = as.factor(LIVARAG)) %>%
+  select(c(recoded_age, depress, race, gender, education, employment, living))
+```
+
+```{r}
+library(knitr)
+library(tableone)
+var=c("race", "gender", "education", "employment", "living") 
+table1 <- CreateTableOne(vars = var, data=df3, strata = c("depress"), addOverall = TRUE)
+kable(print(table1, showAllLevels = TRUE))
+```
+
+# k-means clustering
+# https://www.rdocumentation.org/packages/factoextra/versions/1.0.7/topics/fviz_cluster
+```{r}
+# df_cluster <- df_select %>% select(recoded_age,RACE,GENDER,EDUC,EMPLOY,LIVARAG)
+
+km.out = kmeans(df3, centers=2, nstart=20)
+print(km.out)
+table(km.out$cluster, df_select$RACE)
+
+df3$cluster <- km.out$cluster
+
+fviz_cluster(km.out, data=df_select, geom="point", xlab="PC1", ylab = "PC2")
+
+
+```
+
+# Training and test data
+```{r}
+set.seed(2)
+idx = sample(1:nrow(df2), 1000580)
+train = df2[idx,]
+test = df2[-idx,]
+
+idx1 = sample(1:nrow(df3), 1000580)
+train1 = df3[idx1,]
+test1 = df3[-idx1,]
+prop.table(table(train1$depress))
+```
+
+# linear regression
+```{r}
+sample = sample.split(df3$recoded_age, SplitRatio = 0.7)
+train = subset(df3, sample == TRUE)
+test  = subset(df3, sample == FALSE)
+# x_test = test %>% select(-c(recoded_age))
+# y_test = test %>% select(c(recoded_age))
+
+x.train <- model.matrix(recoded_age ~., train)
+y.train <- train$recoded_age
+x.test <- model.matrix(recoded_age ~., test)
+y.test <- test$recoded_age
+
+library(glmnet)
+fit.lasso=glmnet(x.train,y.train,alpha=1)
+cv.lasso = cv.glmnet(x.train, y.train, alpha=1)
+bestlam = cv.lasso$lambda.min
+best_model <- glmnet(x.train, y.train, alpha = 1, lambda = bestlam)
+coef(best_model)
+pred_lasso <- predict(cv.lasso, s = bestlam, newx = x.test)
+mse = function(x,y) { mean((x-y)^2)}
+mse.2 = mse(pred_lasso,y.test)
+mse.2
+
+
+sse <- sum((pred_lasso - y.test)^2)
+rss <- sum((y.test - pred_lasso)^2)
+sst <- sum((y.test - mean(y.test))^2)
+r2 <- 1 - (rss/sst)
+r2
+
+
+cts_mod <- lm(recoded_age ~ ., data=df_select)
+summary(cts_mod)
+
+cts_mod1 <- lm(recoded_age ~ DEPRESSFLG, data = df_select)
+summary(cts_mod1)
+
+anova(cts_mod, cts_mod1) # reject simple model
+```
+
+# decision trees
+```{r}
+dt <- tree(depress ~ ., data=train1)
+summary(dt)
+plot(dt)
+text(dt, pretty=0)
+
+library(rpart)
+mtree <- rpart(depress ~ gender + education, data=train, method='class')
+summary(mtree)
+library(rpart.plot)
+rpart.plot(mtree, cex=1)
+
+
+pred <- predict(dt, df3[,1:7], type="class")
+library(gmodels)
+CrossTable(pred, df3$depress, expected=FALSE)
+
+
+tc <- tree.control(nobs = nrow(train1), mindev=0, minsize=1)
+dt <- tree(depress ~ ., data=train1, control = tc)
+summary(dt)
+plot(dt)
+text(dt, pretty=0)
+
+
+
+dt2 <- tree(depress ~ gender + race, data=train1, control = tc)
+summary(dt2)
+plot(dt2)
+text(dt2, pretty=0)
+```
+
