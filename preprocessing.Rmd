@@ -20,7 +20,7 @@ load("C:/Users/raos2/OneDrive/Documents/GRADSCHOOL/707/mhcld_puf_2019_r.RData")
 ```{r}
 df1 <- df %>% select(-c("MH1", "MH2", "MH3", 
                         "SUB", "SMISED", "DETNLF", "NUMMHS", 
-                        "DIVISION", "REGION", "CASEID"))
+                        "DIVISION", "REGION", "CASEID", "YEAR"))
 ```
 
 ## explore missingness
