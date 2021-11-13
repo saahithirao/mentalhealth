@@ -1,0 +1,61 @@
+---
+title: "project_preprocessing"
+output: word_document
+---
+# Cleaning and preprocessing the data 
+## load necessary packages
+```{r}
+library(tidyverse)
+library(knitr)
+library(tableone)
+library(questionr)
+```
+
+## load data (mental health client level data)
+```{r}
+load("C:/Users/raos2/OneDrive/Documents/GRADSCHOOL/707/mhcld_puf_2019_r.RData")
+```
+
+## remove correlated variables (variables that are not of interest)
+```{r}
+df1 <- df %>% select(-c("MH1", "MH2", "MH3", "SUB", "SMISED", "DETNLF", "NUMMHS", 
+                        "DIVISION", "REGION"))
+```
+
+## explore missingness
+```{r}
+# NAs are labeled as -9 in the data
+df1[df1 == -9] <- NA 
+kable(freq.na(df1))
+```
+
+## remove NAs
+## 1,185,836 observations after removing NAs
+```{r}
+df2 <- df1 %>% na.omit()
+1 - nrow(df2)/nrow(df1)
+```
+
+## recode age as a numeric variable
+```{r}
+df3 <- df2 %>% mutate(recoded_age = ifelse(AGE == 1, 5.5,
+                              ifelse(AGE == 2, 13, 
+                                ifelse(AGE == 3, 16, 
+                                  ifelse(AGE==4, 19,
+                                    ifelse(AGE==5, 23, 
+                                      ifelse(AGE==6, 27,
+                                        ifelse(AGE==7, 32, 
+                                          ifelse(AGE==8, 37,
+                                            ifelse(AGE==9, 42, 
+                                              ifelse(AGE==10,47, 
+                                                ifelse(AGE==11, 53, 
+                                                  ifelse(AGE==12, 57, 
+                                                    ifelse(AGE==13, 62, 
+                                                      ifelse(AGE==14, 72, NA))))))))))))))) %>% select(-c(AGE))
+```
+
+## save preprocessed dataframe
+```{r}
+write.csv(df3, file = "mh_data.csv")
+```
+
