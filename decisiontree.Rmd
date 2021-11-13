@@ -1,0 +1,67 @@
+---
+title: "DecisionTree"
+output: html_document
+---
+## Code for creating a decision tree
+
+## load libraries and read data
+```{r}
+library(tree)
+library(rpart)
+library(rpart.plot)
+dat <- read.csv("mh_data.csv") %>% select(-c("X"))
+```
+
+## relabel outcome
+```{r}
+dat$DEPRESSFLG <- as.factor(dat$DEPRESSFLG)
+dat$DEPRESSFLG <- ifelse(dat$DEPRESSFLG=="0", "No Depression", "Depression")
+```
+
+## split the data and training and test sets
+```{r}
+sample = sample.split(dat$DEPRESSFLG, SplitRatio = 0.8)
+train = subset(dat, sample == TRUE)
+test  = subset(dat, sample == FALSE)
+```
+
+## build the classification decision tree
+```{r}
+fit <- rpart(DEPRESSFLG~.,data=train, method='class')
+rpart.plot(fit, extra=106)
+```
+
+## make predictions on the test set
+```{r}
+pred <- predict(fit, test, type="class")
+matrix <- table(test$DEPRESSFLG, pred)
+accuracy <- sum(diag(matrix)) / sum(matrix)
+kable(matrix)
+```
+
+
+# decision trees using tree module
+```{r}
+# no requirements
+dt <- tree(DEPRESSFLG ~ ., data=df)
+summary(dt)
+plot(dt)
+text(dt, pretty=0)
+
+# setting the minimum deviation between nodes to be 0
+tc <- tree.control(nobs = nrow(train1), mindev=0, minsize=1)
+dt2 <- tree(depress ~ ., data=train1, control = tc)
+summary(dt2)
+plot(dt2)
+text(dt2, pretty=0)
+
+# plotting with variables of interest
+dt3 <- tree(depress ~ recoded_age + GENDER + RACE + EDUC + LIVARAG + EMPLOY, 
+            data=df, control = tc)
+summary(dt2)
+plot(dt2)
+text(dt2, pretty=0)
+```
+
+
+
