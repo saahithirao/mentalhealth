@@ -6,6 +6,8 @@ output: html_document
 
 ## load libraries and read data
 ```{r}
+library(tidyverse)
+library(caTools)
 library(tree)
 library(rpart)
 library(rpart.plot)
@@ -14,12 +16,13 @@ dat <- read.csv("mh_data.csv") %>% select(-c("X"))
 
 ## relabel outcome
 ```{r}
+dat$DEPRESSFLG <- ifelse(dat$DEPRESSFLG==0, "No Depression", "Depression")
 dat$DEPRESSFLG <- as.factor(dat$DEPRESSFLG)
-dat$DEPRESSFLG <- ifelse(dat$DEPRESSFLG=="0", "No Depression", "Depression")
 ```
 
 ## split the data and training and test sets
 ```{r}
+set.seed(4)
 sample = sample.split(dat$DEPRESSFLG, SplitRatio = 0.8)
 train = subset(dat, sample == TRUE)
 test  = subset(dat, sample == FALSE)
@@ -27,7 +30,7 @@ test  = subset(dat, sample == FALSE)
 
 ## build the classification decision tree
 ```{r}
-fit <- rpart(DEPRESSFLG~.,data=train, method='class')
+fit <- rpart(DEPRESSFLG~., data=train, method='class')
 rpart.plot(fit, extra=106)
 ```
 
@@ -35,8 +38,12 @@ rpart.plot(fit, extra=106)
 ```{r}
 pred <- predict(fit, test, type="class")
 matrix <- table(test$DEPRESSFLG, pred)
-accuracy <- sum(diag(matrix)) / sum(matrix)
 kable(matrix)
+```
+
+## calculate accuracy
+```{r}
+accuracy <- sum(diag(matrix)) / sum(matrix)
 ```
 
 
@@ -62,6 +69,3 @@ summary(dt2)
 plot(dt2)
 text(dt2, pretty=0)
 ```
-
-
-
