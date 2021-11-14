@@ -3,51 +3,60 @@ title: "Linear Regression"
 output: word_document
 ---
 
-## Modeling age using linear regression 
+# Modeling age using linear regression 
 
+## load packages and data
 ```{r}
 library(factoextra)
 library(caTools)
 library(glmnet)
+library(tidyverse)
 cts <- read.csv("mh_data.csv")
 ```
 
-# split data into training and test sets
+## split data into training and test sets
 ```{r}
-sample = sample.split(cts$recoded_age, SplitRatio = 0.8)
-train = subset(cts, sample == TRUE)
-test  = subset(cts, sample == FALSE)
-# x_test = test %>% select(-c(recoded_age))
-# y_test = test %>% select(c(recoded_age))
+cts1 <- cts %>% select(-c("X"))
+sample = sample.split(cts1$recoded_age, SplitRatio = 0.8)
+train = subset(cts1, sample == TRUE)
+test  = subset(cts1, sample == FALSE)
 
-x.train <- model.matrix(recoded_age ~., train)
+x.train <- model.matrix(recoded_age ~ ., train)
 y.train <- train$recoded_age
 x.test <- model.matrix(recoded_age ~., test)
 y.test <- test$recoded_age
 ```
 
-# lasso regression to pick best model
+## lasso regression to pick best model
+## best lambda = 0.0039
 ```{r}
 fit.lasso = glmnet(x.train,y.train,alpha=1)
 cv.lasso = cv.glmnet(x.train, y.train, alpha=1)
-bestlam = cv.lasso$lambda.min
+bestlam = cv.lasso$lambda.min 
 best_model <- glmnet(x.train, y.train, alpha = 1, lambda = bestlam)
+summary(best_model)
 coef(best_model)
 ```
 
-# make predictions and evaluate model using MSE and R^2
+## make predictions
 ```{r}
-pred_lasso <- predict(cv.lasso, s = bestlam, newx = x.test)
+pred_lasso <- predict(best_model, s = bestlam, newx = x.test)
+```
+
+## evaluate model using MSE and R^2 
+## MSE is 317.27 and R2 is 0.295
+```{r}
 mse = function(x,y) { mean((x-y)^2)}
 mse.2 = mse(pred_lasso,y.test)
 mse.2
 
-
-sse <- sum((pred_lasso - y.test)^2)
 rss <- sum((y.test - pred_lasso)^2)
 sst <- sum((y.test - mean(y.test))^2)
 r2 <- 1 - (rss/sst)
 r2
 ```
 
-
+## select necessary variables
+# ```{r}
+# cts1 <- cts %>% select(c("EDUC", "RACE", "GENDER", "EMPLOY", "LIVARAG", "recoded_age"))
+# ```
