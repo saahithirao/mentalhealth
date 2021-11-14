@@ -1,0 +1,102 @@
+---
+title: "707_project_RF"
+author: "Mingxuan Wang"
+date: "11/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message = F,warning = F)
+library(tidyverse)
+library(ggplot2)
+library(caTools)
+library(tree)
+library(randomForest)
+library(gmodels) 
+library(ROSE)
+library(caret)
+```
+
+# read data
+```{r}
+df2<-read.csv("C:\\1_Work\\Duke_3rd_semester\\707\\Final_Project\\final_code\\mh_data.csv")
+set.seed(4)
+# Depress
+df2_dep=df2%>%select(-ANXIETYFLG,-X)
+# change the outcome and categorical variables to factor
+df2_dep[,c(1:27)]<-lapply(df2_dep[,c(1:27)], 
+                          function(x) as.factor(x))
+```
+
+# Sampling a subset of 20000 from the dataset
+```{r}
+sample_offset<-sample(nrow(df2_dep),20000)
+df2_dep<-df2_dep[sample_offset,]
+```
+
+# train test split
+```{r}
+set.seed(4)
+# split test and train
+split=sample.split(df2_dep$DEPRESSFLG,SplitRatio = 0.7)
+train_df=subset(df2_dep,split==TRUE)
+test_df=subset(df2_dep,split==FALSE)
+```
+
+# over sampling
+```{r}
+train_df <- ovun.sample(DEPRESSFLG ~ ., train_df, method="over")$data
+```
+
+# tuning parameters: mtry
+```{r}
+folds <- createFolds(train_df$DEPRESSFLG, k = 5)
+mean_err<-vector()
+feature_cnt<-ncol(df2_dep)-1
+for (i in 2:(feature_cnt-1)) {
+  err<-vector()
+  for (j in 1:5){
+    train_cv<-train_df[-folds[[j]],]
+    validation_cv<-train_df[folds[[j]],]
+    mtry_fit<- randomForest(DEPRESSFLG~.,data=train_cv,ntree=500,mtry=i,importance=TRUE)
+    fit_predicted<-predict(mtry_fit, validation_cv[,-20],
+                           type="class")
+    confM<-table(fit_predicted,validation_cv[,20])
+    err[j]<-(confM[1,2]+confM[2,1])/sum(confM)
+  }
+  mean_err[i-1]<-mean(err)
+print(i)
+}
+mtry_err<-data.frame(c(2:(feature_cnt-1)),mean_err)
+plot(mtry_err,xlab="mtry",ylab="error",main="error rate with different mtry",type="l")
+```
+minimum error rate when mtry = 14.
+
+# tuning model: ntree
+```{r}
+rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=500,mtry=14,importance=TRUE)
+plot(rf)
+```
+ntree = 100
+
+# build final model
+```{r}
+rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=100,mtry=14,importance=TRUE)
+```
+
+# variable importance
+```{r, fig.height=10, fig.width=10}
+# Calculate and plot importance:
+importance(rf)
+varImpPlot(rf)
+```
+
+# Model evaluation
+```{r}
+# Generate a classification performance metric on the random forest model:
+rf_pred <- predict(rf, test_df[,-20], type="class")
+CrossTable(rf_pred,test_df[,20])
+confM_final<-table(rf_pred,test_df[,20])
+err_final<-(confM_final[1,2]+confM_final[2,1])/sum(confM_final)
+err_final
+```
