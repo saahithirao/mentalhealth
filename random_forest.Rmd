@@ -38,7 +38,7 @@ df2_dep<-df2_dep[sample_offset,]
 ```{r}
 set.seed(4)
 # split test and train
-split=sample.split(df2_dep$DEPRESSFLG,SplitRatio = 0.7)
+split=sample.split(df2_dep$DEPRESSFLG,SplitRatio = 0.8)
 train_df=subset(df2_dep,split==TRUE)
 test_df=subset(df2_dep,split==FALSE)
 ```
@@ -70,18 +70,18 @@ print(i)
 mtry_err<-data.frame(c(2:(feature_cnt-1)),mean_err)
 plot(mtry_err,xlab="mtry",ylab="error",main="error rate with different mtry",type="l")
 ```
-minimum error rate when mtry = 14.
+minimum error rate when mtry = 15.
 
 # tuning model: ntree
 ```{r}
-rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=500,mtry=14,importance=TRUE)
+rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=500,mtry=15,importance=TRUE)
 plot(rf)
 ```
 ntree = 100
 
 # build final model
 ```{r}
-rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=100,mtry=14,importance=TRUE)
+rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=100,mtry=15,importance=TRUE)
 ```
 
 # variable importance
