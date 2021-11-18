@@ -43,11 +43,6 @@ train_df=subset(df2_dep,split==TRUE)
 test_df=subset(df2_dep,split==FALSE)
 ```
 
-# over sampling
-```{r}
-train_df <- ovun.sample(DEPRESSFLG ~ ., train_df, method="over")$data
-```
-
 # tuning parameters: mtry
 ```{r}
 folds <- createFolds(train_df$DEPRESSFLG, k = 5)
@@ -70,18 +65,18 @@ print(i)
 mtry_err<-data.frame(c(2:(feature_cnt-1)),mean_err)
 plot(mtry_err,xlab="mtry",ylab="error",main="error rate with different mtry",type="l")
 ```
-minimum error rate when mtry = 15.
+minimum error rate when mtry = 5.
 
 # tuning model: ntree
 ```{r}
-rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=500,mtry=15,importance=TRUE)
+rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=500,mtry=5,importance=TRUE)
 plot(rf)
 ```
 ntree = 100
 
 # build final model
 ```{r}
-rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=100,mtry=15,importance=TRUE)
+rf<-randomForest(DEPRESSFLG~.,data=train_df,ntree=100,mtry=5,importance=TRUE)
 ```
 
 # variable importance
