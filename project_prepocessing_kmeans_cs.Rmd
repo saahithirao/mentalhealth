@@ -1,99 +1,12 @@
 ---
-title: "project_preprocessing"
+title: "kmean_clustering"
 output: word_document
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Cleaning and preprocessing the data 
-## load necessary packages
-```{r}
-library(tidyverse)
-library(knitr)
-library(tableone)
-library(questionr)
-
-library(ggplot2)
-library(lubridate)
-library(patchwork)
-library(gridExtra)
-library(psych)
-library(corrplot)
-library(ggfortify)
-library(factoextra)
-library(class) #knn
-library(gmodels) # CrossTable()
-library(caret) # creatFolds()
-library(caTools) #sample.split()
-library(ROCR) # prediction(), performance()
-```
-
-## read data from csv
-```{r}
-df = read_csv("/Users/chuxuan/Desktop/biostat707/class_project/mhcld-puf-2019.csv")
-```
-
-## remove correlated variables (variables that are not of interest)
-```{r}
-df1 <- df %>% select(-c("MH1", "MH2", "MH3", 
-                        "SUB", "SMISED", "DETNLF", "NUMMHS", 
-                        "DIVISION", "REGION", "CASEID", "YEAR"))
-```
-
-## explore missingness
-```{r}
-# NAs are labeled as -9 in the data
-df1[df1 == -9] <- NA 
-```
-
-## remove NAs
-## 1,185,836 observations after removing NAs
-```{r}
-df2 <- df1 %>% na.omit()
-1 - nrow(df2)/nrow(df1)
-```
-
-## recode age as a numeric variable
-```{r}
-df3 <- df2 %>% mutate(recoded_age = ifelse(AGE == 1, 5.5,
-                              ifelse(AGE == 2, 13, 
-                                ifelse(AGE == 3, 16, 
-                                  ifelse(AGE==4, 19,
-                                    ifelse(AGE==5, 23, 
-                                      ifelse(AGE==6, 27,
-                                        ifelse(AGE==7, 32, 
-                                          ifelse(AGE==8, 37,
-                                            ifelse(AGE==9, 42, 
-                                              ifelse(AGE==10,47, 
-                                                ifelse(AGE==11, 53, 
-                                                  ifelse(AGE==12, 57, 
-                                                    ifelse(AGE==13, 62, 
-                                                      ifelse(AGE==14, 72, NA))))))))))))))) %>% select(-c(AGE))
-```
-
-## table 1
-```{r}
-df_tab <-df3 %>% mutate(depress = as.factor(DEPRESSFLG)) %>%
-  mutate(race = as.factor(RACE)) %>%
-  mutate(gender = as.factor(GENDER)) %>%
-  mutate(education = as.factor(EDUC)) %>% 
-  mutate(employment = as.factor(EMPLOY)) %>%
-  mutate(living = as.factor(LIVARAG)) %>%
-  select(c(recoded_age, depress, race, gender, education, employment, living))
-var=c("recoded_age", "race", 
-      "gender", "education", "employment", "living") 
-table1 <- CreateTableOne(vars = var, data=df_tab, strata = c("depress"), addOverall = TRUE)
-kable(print(table1, showAllLevels = TRUE))
-```
-
-## save preprocessed dataframe
-```{r}
-write.csv(df3, file = "mh_data.csv")
-```
-
-
-
+df3 <- read.csv(""mh_data.csv")
 
 ## K-means ckustering with n = 1000 sampled 
 ```{r}
@@ -104,7 +17,6 @@ km.out = kmeans(df3_train,centers=5, nstart=20)
 table(km.out$cluster)
 
 fviz_cluster(km.out,data = df3_train,geom = "point")+xlab("PC1")+ylab("PC2")+ggtitle("K-Means clustering for two groups (k=2)")
-
 ```
 ## K-means ckustering with all observations
 ```{r}
@@ -112,5 +24,4 @@ km.out2 = kmeans(df3,centers=2, nstart=20)
 table(km.out2$cluster)
 
 fviz_cluster(km.out2,data = df3,geom = "point")+xlab("PC1")+ylab("PC2")+ggtitle("K-Means clustering for two groups (k=2)")
-
 ```
