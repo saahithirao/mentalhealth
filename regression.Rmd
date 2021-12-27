@@ -1,9 +1,9 @@
 ---
-title: "Linear Regression"
+title: "Lasso Regression"
 output: word_document
 ---
 
-# Modeling age using linear regression 
+# Modeling age using lasso regression 
 
 ## load packages and data
 ```{r}
@@ -54,6 +54,18 @@ rss <- sum((y.test - pred_lasso)^2)
 sst <- sum((y.test - mean(y.test))^2)
 r2 <- 1 - (rss/sst)
 r2
+```
+
+## fit multiple linear regression model and compare 
+```{r}
+cts_mod <- lm(recoded_age ~ ., data=train)
+summary(cts_mod)
+
+pred <- predict(cts_mod, test)
+sse <- sum((pred-y.test)^2)
+sst <- sum((y.test - mean(y.test))^2)
+rss <- sum((y.test - pred)^2)
+r2 <- 1 - (rss/sst)
 ```
 
 ## select necessary variables
