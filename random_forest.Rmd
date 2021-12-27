@@ -1,7 +1,5 @@
 ---
-title: "707_project_RF"
-author: "Mingxuan Wang"
-date: "11/05/2021"
+title: "Random Forest"
 output: html_document
 ---
 
@@ -21,8 +19,10 @@ library(caret)
 ```{r}
 df2<-read.csv("C:\\1_Work\\Duke_3rd_semester\\707\\Final_Project\\final_code\\mh_data.csv")
 set.seed(4)
+
 # Depress
 df2_dep=df2%>%select(-ANXIETYFLG,-X)
+
 # change the outcome and categorical variables to factor
 df2_dep[,c(1:27)]<-lapply(df2_dep[,c(1:27)], 
                           function(x) as.factor(x))
