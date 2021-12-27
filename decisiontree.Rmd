@@ -40,11 +40,22 @@ pred <- predict(fit, test, type="class")
 matrix <- table(test$DEPRESSFLG, pred)
 kable(matrix)
 ```
-
 ## calculate accuracy
 ```{r}
 accuracy <- sum(diag(matrix)) / sum(matrix)
 ```
+
+## cross table
+## calculate error rate and F1 score
+```{r}
+ct <- CrossTable(pred, test$DEATH_EVENT, 
+ prop.r=FALSE, prop.c=FALSE, prop.t=FALSE, prop.chisq = FALSE)
+err <- (ct$t[1,2]+ct$t[2,1])/nrow(test)
+precision_dt <- ct$t[2,2]/(ct$t[2,2]+ct$t[2,1])
+recall_dt <- ct$t[2,2]/(ct$t[2,2]+ct$t[1,2])
+F1 <- 2 * ((precision_dt*recall_dt)/(precision_dt+recall_dt))
+```
+
 
 
 # decision trees using tree module
